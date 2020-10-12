@@ -14,12 +14,31 @@ async def get_commodity():
 @commodity.get('/commodity/{id}')
 async def get_commodity_final_by_id(id: int):
     comodity_details = await db_manager.get_commodity_by_id(id)
-    qwerty = await db_manager.get_chemical_composition_comodity_by_id(id)
+    if not comodity_details:
+        raise HTTPException(
+            status_code=404,
+            detail="commodity not found {}".format(id)
+        )
+    concentration = await db_manager.get_chemical_composition_comodity_by_id(id)
+    total_percentage = sum([val['percentage'] for val in concentration])
     chemical_composition = [
-        {"element": {"id": row['id'], "name": row['name'],}, "percentage": row['percentage']} for row in qwerty]
+        {
+            "element": {
+                "id": row['id'],
+                "name": row['name']
+            }, 
+            "percentage": row['percentage']
+        } for row in concentration]
+    
+    if total_percentage < 100:
+        Unknown = {
+            "element": {"id": 9999, "name": "Unknown"},
+            "percentage": int(100-total_percentage)
+        }
+        chemical_composition.append(Unknown)
     return CommodityFinal(
-        **comodity_details,
-        chemical_composition=chemical_composition)
+            **comodity_details,
+            chemical_composition=chemical_composition)
 
 
 @commodity.put('/update_commodity/{id}', response_model=Commodity)

@@ -4,17 +4,16 @@ from app.api.routes.commodity import commodity
 from app.api.routes.composition import composition
 from app.api.db import metadata, database, engine
 
+from app.api.repository.scripts import migrations
 app = FastAPI()
 
 metadata.create_all(engine)
-
-app = FastAPI()
 
 
 @app.on_event("startup")
 async def startup():
     await database.connect()
-
+    await migrations()
 
 @app.on_event("shutdown")
 async def shutdown():
